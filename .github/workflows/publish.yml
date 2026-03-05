@@ -1,0 +1,69 @@
+name: Test Build Publish
+
+on:
+  push:
+
+jobs:
+  test-build-publish:
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build package
+        run: npm run build
+
+      - name: Bump patch version
+        id: bump_version
+        run: |
+          npm version patch --no-git-tag-version
+          echo "version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
+
+      - name: Validate npm token placeholder
+        env:
+          # Replace secret name below with your actual npm token secret name.
+          # Example: secrets.NPM_TOKEN
+          NODE_AUTH_TOKEN: ${{ secrets.REPLACE_WITH_YOUR_NPM_TOKEN_SECRET_NAME }}
+        run: |
+          if [ -z "${NODE_AUTH_TOKEN}" ]; then
+            echo "Missing npm token secret."
+            echo "Set GitHub Actions secret: REPLACE_WITH_YOUR_NPM_TOKEN_SECRET_NAME"
+            exit 1
+          fi
+
+      - name: Publish to npm
+        env:
+          # Replace secret name below with your actual npm token secret name.
+          NODE_AUTH_TOKEN: ${{ secrets.REPLACE_WITH_YOUR_NPM_TOKEN_SECRET_NAME }}
+        run: npm publish --access public
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          if git diff --cached --quiet; then
+            echo "No version changes to commit."
+            exit 0
+          fi
+          git commit -m "chore: bump version to ${{ steps.bump_version.outputs.version }} [skip ci]"
+          git push

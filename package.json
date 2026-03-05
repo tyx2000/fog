@@ -1,0 +1,36 @@
+{
+  "name": "fog",
+  "version": "0.1.0",
+  "description": "A lightweight React hooks package.",
+  "type": "module",
+  "exports": {
+    "./use*": {
+      "types": "./dist/use*.d.ts",
+      "default": "./dist/use*.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup src/use*.ts --format esm --dts --minify --clean --target es2022 && node scripts/report-build-size.mjs",
+    "dev": "tsup src/use*.ts --format esm --dts --watch --target es2022",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@testing-library/react": "^16.2.0",
+    "jsdom": "^26.0.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.3",
+    "vitest": "^3.1.1"
+  }
+}
