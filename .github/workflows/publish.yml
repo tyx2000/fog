@@ -41,18 +41,18 @@ jobs:
         env:
           # Replace secret name below with your actual npm token secret name.
           # Example: secrets.NPM_TOKEN
-          NODE_AUTH_TOKEN: ${{ secrets.REPLACE_WITH_YOUR_NPM_TOKEN_SECRET_NAME }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           if [ -z "${NODE_AUTH_TOKEN}" ]; then
             echo "Missing npm token secret."
-            echo "Set GitHub Actions secret: REPLACE_WITH_YOUR_NPM_TOKEN_SECRET_NAME"
+            echo "Set GitHub Actions secret: NPM_TOKEN"
             exit 1
           fi
 
       - name: Publish to npm
         env:
           # Replace secret name below with your actual npm token secret name.
-          NODE_AUTH_TOKEN: ${{ secrets.REPLACE_WITH_YOUR_NPM_TOKEN_SECRET_NAME }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --access public
 
       - name: Commit version bump
