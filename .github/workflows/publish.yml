@@ -50,6 +50,52 @@ jobs:
             exit 1
           fi
 
+      - name: Pre-publish checks (auth, ownership, version)
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          NPM_USER="$(npm whoami)"
+          PKG_NAME="$(npm pkg get name | tr -d '"')"
+          PKG_VERSION="$(npm pkg get version | tr -d '"')"
+
+          echo "npm account: ${NPM_USER}"
+          echo "target package: ${PKG_NAME}@${PKG_VERSION}"
+
+          if npm view "${PKG_NAME}" version >/dev/null 2>&1; then
+            MAINTAINERS_JSON="$(npm view "${PKG_NAME}" maintainers --json 2>/dev/null || echo "[]")"
+            if ! printf "%s" "${MAINTAINERS_JSON}" | node -e '
+              const fs = require("fs");
+              const input = fs.readFileSync(0, "utf8").trim();
+              const user = process.argv[1];
+              let data = [];
+              if (input) {
+                try {
+                  data = JSON.parse(input);
+                } catch {
+                  data = [];
+                }
+              }
+              const maintainers = Array.isArray(data) ? data : [data];
+              const hasAccess = maintainers.some((m) => m && m.name === user);
+              process.exit(hasAccess ? 0 : 1);
+            ' "${NPM_USER}"; then
+              echo "No publish permission for package '${PKG_NAME}' with npm user '${NPM_USER}'."
+              echo "Use a package name you own (for example a scoped name like @${NPM_USER}/${PKG_NAME})."
+              exit 1
+            fi
+          else
+            echo "Package '${PKG_NAME}' does not exist yet. First publish path will be used."
+          fi
+
+          if npm view "${PKG_NAME}@${PKG_VERSION}" version >/dev/null 2>&1; then
+            echo "Version '${PKG_VERSION}' already exists for '${PKG_NAME}'."
+            echo "Please bump version before publish."
+            exit 1
+          fi
+
       - name: Publish to npm
         env:
           # Replace secret name below with your actual npm token secret name.
