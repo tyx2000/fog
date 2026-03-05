@@ -1,5 +1,5 @@
 {
-  "name": "@sprinkle/fog",
+  "name": "@sprinkle2fog/hooks",
   "version": "0.1.0",
   "description": "A lightweight React hooks package.",
   "type": "module",
